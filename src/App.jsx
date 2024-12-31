@@ -1,82 +1,136 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 
-function App() {
-  const [transcription, setTranscription] = useState("");
+const App = () => {
   const [isListening, setIsListening] = useState(false);
+  const [transcription, setTranscription] = useState("");
+  const [language, setLanguage] = useState("fr-FR");
 
   useEffect(() => {
-    // Vérification de la compatibilité avec l'API SpeechRecognition
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      console.error("L'API SpeechRecognition n'est pas prise en charge par ce navigateur.");
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+      alert("Votre navigateur ne supporte pas l'API de reconnaissance vocale.");
       return;
     }
 
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = true; // Continue à écouter
-    recognition.interimResults = true; // Résultats partiels
-    recognition.lang = "fr-FR"; // Langue française
 
-    // Gérer les événements de transcription
-    recognition.onresult = (event) => {
-      const transcriptArray = Array.from(event.results)
-        .map((result) => result[0].transcript)
-        .join(" ");
-      setTranscription(transcriptArray);
-    };
-
-    recognition.onerror = (event) => {
-      console.error("Erreur de reconnaissance vocale :", event.error);
-    };
+    recognition.lang = language;
+    recognition.interimResults = true;
 
     if (isListening) {
       recognition.start();
-    } else {
-      recognition.stop();
     }
 
-    // Nettoyer l'écouteur quand le composant se démonte
-    return () => recognition.stop();
-  }, [isListening]);
+    recognition.onresult = (event) => {
+      const currentTranscript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join("");
+      setTranscription(currentTranscript);
+    };
+
+    recognition.onend = () => {
+      if (isListening) recognition.start(); // Redémarre si l'utilisateur est toujours en mode écoute
+    };
+
+    return () => {
+      recognition.stop();
+    };
+  }, [isListening, language]);
+
+  const styles = {
+    container: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      padding: "20px",
+      backgroundColor: "#F9F9F9",
+      minHeight: "100vh",
+    },
+    selectLanguage: {
+      marginBottom: "20px",
+      padding: "10px",
+      fontSize: "16px",
+      borderRadius: "5px",
+      border: "1px solid #DDD",
+    },
+    controls: {
+      display: "flex",
+      justifyContent: "center",
+      gap: "10px",
+      marginBottom: "20px",
+      flexWrap: "wrap",
+    },
+    button: {
+      padding: "10px 15px",
+      fontSize: "16px",
+      borderRadius: "8px",
+      border: "none",
+      cursor: "pointer",
+      transition: "all 0.3s",
+      backgroundColor: isListening ? "#FF6C4A" : "#283D92",
+      color: "#FFF",
+    },
+    transcriptionBox: {
+      padding: "20px",
+      border: "1px solid #DDD",
+      borderRadius: "10px",
+      backgroundColor: "#FFF",
+      maxWidth: "90%",
+      margin: "10px auto",
+      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+      textAlign: "center",
+    },
+    transcriptionTitle: {
+      marginBottom: "10px",
+      fontSize: "18px",
+      fontWeight: "bold",
+      color: "#333",
+    },
+    transcriptionText: {
+      fontSize: "16px",
+      color: "#555",
+    },
+    "@media (max-width: 768px)": {
+      controls: {
+        flexDirection: "column",
+      },
+      button: {
+        width: "100%",
+        marginBottom: "10px",
+      },
+    },
+  };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Radio App</h1>
-      <p>
-        Cliquez sur le bouton ci-dessous pour commencer à parler. Ce que vous dites
-        s'affichera en temps réel !
-      </p>
-      <button
-        onClick={() => setIsListening((prev) => !prev)}
-        style={{
-          backgroundColor: isListening ? "#ff6c4a" : "#283d92",
-          color: "white",
-          padding: "10px 20px",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
+    <div style={styles.container}>
+      <select
+        style={styles.selectLanguage}
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
       >
-        {isListening ? "Arrêter" : "Parler"}
-      </button>
-      <div
-        style={{
-          marginTop: "20px",
-          padding: "10px",
-          border: "1px solid #ddd",
-          borderRadius: "5px",
-          width: "80%",
-          margin: "20px auto",
-          backgroundColor: "#f9f9f9",
-        }}
-      >
-        <h3>Texte capturé :</h3>
-        <p>{transcription || "Rien n'est encore dit..."}</p>
+        <option value="fr-FR">Français</option>
+        <option value="en-US">English</option>
+        <option value="es-ES">Español</option>
+      </select>
+
+      <div style={styles.controls}>
+        <button
+          style={styles.button}
+          onClick={() => setIsListening((prev) => !prev)}
+        >
+          {isListening ? "Arrêter" : "Parler"}
+        </button>
+      </div>
+
+      <div style={styles.transcriptionBox}>
+        <h3 style={styles.transcriptionTitle}>📝 Texte capturé :</h3>
+        <p style={styles.transcriptionText}>
+          {transcription || "Rien n'est encore dit..."}
+        </p>
       </div>
     </div>
   );
-}
+};
 
 export default App;
