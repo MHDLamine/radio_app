@@ -35,8 +35,15 @@ const App = () => {
 
     return () => {
       recognition.stop();
+      
     };
   }, [isListening, language]);
+
+  const handleLanguageChange = (e) => {
+    setLanguage(e.target.value); // Change la langue
+    setTranscription(""); // Réinitialise la transcription
+    setIsListening(false); // Arrête l'écoute si elle est en cours
+  };
 
   const styles = {
     container: {
@@ -107,7 +114,7 @@ const App = () => {
       <select
         style={styles.selectLanguage}
         value={language}
-        onChange={(e) => setLanguage(e.target.value)}
+        onChange={handleLanguageChange}
       >
         <option value="fr-FR">Français</option>
         <option value="en-US">English</option>
